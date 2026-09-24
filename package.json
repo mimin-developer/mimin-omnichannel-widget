@@ -1,9 +1,15 @@
 {
   "name": "mimin-omnichannel-widget-react",
   "description": "Embeddable omnichannel web chat widget for Mimin",
-  "keywords": ["mimin", "omnichannel", "widget", "web-chat", "react"],
+  "keywords": [
+    "mimin",
+    "omnichannel",
+    "widget",
+    "web-chat",
+    "react"
+  ],
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "repository": {
     "type": "git",
@@ -21,7 +27,10 @@
     "preview": "vite preview",
     "prepack": "npm run build"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "types": "./dist/types/widget.d.ts",
   "exports": {
     ".": {
@@ -30,6 +39,8 @@
     }
   },
   "dependencies": {
+    "framer-motion": "^12.43.0",
+    "lucide-react": "^0.435.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

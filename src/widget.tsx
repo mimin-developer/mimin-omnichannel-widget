@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { MessageCircleMore, X } from 'lucide-react'
 
 export interface OmnichannelOptions {
   username: string
@@ -25,11 +27,18 @@ interface Theme {
   title: string
 }
 
+type WidgetLocale = 'en' | 'id'
+
+const labels: Record<WidgetLocale, { open: string; close: string }> = {
+  en: { open: 'Open chat', close: 'Close chat' },
+  id: { open: 'Buka chat', close: 'Tutup chat' },
+}
+
 const defaultTheme: Theme = {
   buttonColor: '#0096a2',
   buttonTextColor: '#ffffff',
   iconSrc: '',
-  title: 'Chat with us',
+  title: '',
 }
 
 const visitorPattern = /^ow_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -75,12 +84,6 @@ function normalizeTheme(value: unknown): Theme {
   }
 }
 
-function ChatGlyph({ close = false }: { close?: boolean }) {
-  return close
-    ? <svg aria-hidden="true" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 5l14 14M19 5L5 19" /></svg>
-    : <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-4 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" /><path d="M7.5 11.5h9" /></svg>
-}
-
 function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, host }: {
   options: OmnichannelOptions
   appOrigin: string
@@ -90,10 +93,19 @@ function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, ho
   host: HTMLElement
 }) {
   const [open, setOpen] = useState(host.dataset.open === 'true')
-  const [everOpened, setEverOpened] = useState(host.dataset.open === 'true')
   const [theme, setTheme] = useState<Theme>(defaultTheme)
-  const [invalid, setInvalid] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [locale, setLocale] = useState<WidgetLocale>(() => {
+    const saved = getStored(`${storagePrefix}:locale`)
+    if (saved === 'id' || saved === 'en') return saved
+    return navigator.language.toLowerCase().startsWith('id') ? 'id' : 'en'
+  })
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const localeRef = useRef(locale)
+  const reduceMotion = useReducedMotion()
+
+  useEffect(() => { localeRef.current = locale }, [locale])
+  const title = theme.title
 
   const frameUrl = useMemo(() => {
     const url = new URL(`/web-chat/embed/${encodeURIComponent(options.username)}`, appOrigin)
@@ -104,36 +116,9 @@ function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, ho
   }, [appOrigin, options.username, options.websiteId, visitorId, greetingSeen])
 
   useEffect(() => {
-    const controller = new AbortController()
-    let stopped = false
-    let retryTimer: ReturnType<typeof setTimeout> | undefined
-    const url = new URL('/api/omnichannel-widget/theme', appOrigin)
-    url.searchParams.set('website_id', options.websiteId)
-    const loadTheme = async (attempt: number) => {
-      try {
-        const response = await fetch(url, { credentials: 'omit', signal: controller.signal })
-        if (response.status === 400 || response.status === 404) { setInvalid(true); return }
-        if (!response.ok) throw new Error(`Theme service returned ${response.status}`)
-        setTheme(normalizeTheme(await response.json()))
-      } catch {
-        if (!stopped && attempt < 3) {
-          retryTimer = setTimeout(() => loadTheme(attempt + 1), [1_000, 3_000, 8_000][attempt])
-        }
-      }
-    }
-    void loadTheme(0)
-    return () => {
-      stopped = true
-      controller.abort()
-      if (retryTimer) clearTimeout(retryTimer)
-    }
-  }, [appOrigin, options.websiteId])
-
-  useEffect(() => {
     const onControl = (event: Event) => {
       const next = (event as CustomEvent<boolean>).detail
       setOpen(next)
-      if (next) setEverOpened(true)
     }
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== appOrigin || event.source !== iframeRef.current?.contentWindow) return
@@ -142,15 +127,18 @@ function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, ho
       } else if (event.data?.type === 'mimin:omnichannel:locale-set') {
         if (event.data.locale === 'id' || event.data.locale === 'en') {
           setStored(`${storagePrefix}:locale`, event.data.locale)
+          setLocale(event.data.locale)
         }
+      } else if (event.data?.type === 'mimin:omnichannel:locale-ready') {
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'mimin:omnichannel:locale-apply', locale: localeRef.current }, appOrigin,
+        )
       } else if (event.data?.type === 'mimin:omnichannel:theme') {
         setTheme(normalizeTheme(event.data.theme))
-        const savedLocale = getStored(`${storagePrefix}:locale`)
-        if (savedLocale === 'id' || savedLocale === 'en') {
-          iframeRef.current?.contentWindow?.postMessage(
-            { type: 'mimin:omnichannel:locale-apply', locale: savedLocale }, appOrigin,
-          )
-        }
+        setReady(true)
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'mimin:omnichannel:locale-apply', locale: localeRef.current }, appOrigin,
+        )
       }
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -166,28 +154,46 @@ function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, ho
     }
   }, [appOrigin, host, storagePrefix])
 
-  if (invalid) return null
-
   const toggle = () => {
     const next = !open
     setOpen(next)
-    if (next) setEverOpened(true)
   }
 
   return (
-    <div className={`mimin-widget mimin-widget--${options.position === 'left' ? 'left' : 'right'}${open ? ' mimin-widget--open' : ''}`}
+    <div className={`mimin-widget mimin-widget--${options.position === 'left' ? 'left' : 'right'}${open && ready ? ' mimin-widget--open' : ''}`}
       style={{ [options.position === 'left' ? 'left' : 'right']: '20px', zIndex: options.zIndex ?? 2147483000 }}>
-      {everOpened && <section className="mimin-panel" role="dialog" aria-label={theme.title} style={{ display: open ? 'flex' : 'none' }}>
+      <motion.section className="mimin-panel" role="dialog" aria-label={title || labels[locale].open}
+        aria-hidden={!open || !ready} inert={!open || !ready}
+        initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.96, visibility: 'hidden' }}
+        animate={open && ready
+          ? { opacity: 1, y: 0, scale: 1, visibility: 'visible' }
+          : { opacity: 0, y: 14, scale: 0.96, transitionEnd: { visibility: 'hidden' } }}
+        transition={reduceMotion ? { duration: 0 } : { duration: open && ready ? 0.28 : 0.18, ease: [0.16, 1, 0.3, 1] }}
+        style={{ pointerEvents: open && ready ? 'auto' : 'none' }}>
         <div className="mimin-panel-bar">
-          <span className="mimin-panel-title">{theme.title}</span>
-          <button type="button" className="mimin-close" aria-label="Close chat" onClick={toggle}><ChatGlyph close /></button>
+          <span className="mimin-panel-title">{title}</span>
+          <button type="button" className="mimin-close" aria-label={labels[locale].close} onClick={toggle}><X aria-hidden="true" size={20} strokeWidth={2} /></button>
         </div>
-        <iframe className="mimin-chat-frame" ref={iframeRef} src={frameUrl} title={theme.title} allow="clipboard-write" />
-      </section>}
-      <button type="button" className="mimin-launcher" style={{ backgroundColor: theme.buttonColor, color: theme.buttonTextColor }}
-        aria-label={open ? 'Close chat' : theme.title} aria-expanded={open} title={theme.title} onClick={toggle}>
-        {open ? <ChatGlyph close /> : theme.iconSrc ? <img className="mimin-launcher-image" src={theme.iconSrc} alt="" /> : <ChatGlyph />}
-      </button>
+        <iframe className="mimin-chat-frame" ref={iframeRef} src={frameUrl} title={title || labels[locale].open} allow="clipboard-write" />
+      </motion.section>
+      {ready && <motion.button type="button" className={`mimin-launcher${title && !open ? ' mimin-launcher--titled' : ''}`} style={{ backgroundColor: theme.buttonColor, color: theme.buttonTextColor }}
+        whileHover={reduceMotion ? undefined : { scale: 1.06 }}
+        whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+        transition={{ duration: 0.18 }}
+        aria-label={open ? labels[locale].close : title || labels[locale].open} aria-expanded={open} title={open ? labels[locale].close : title || labels[locale].open} onClick={toggle}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span key={open ? 'close' : 'chat'} className="mimin-launcher-content"
+            initial={reduceMotion ? false : { opacity: 0, rotate: -35, scale: 0.75 }}
+            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0, rotate: 35, scale: 0.75 }}
+            transition={{ duration: reduceMotion ? 0 : 0.16 }}>
+            {open ? <X aria-hidden="true" size={22} strokeWidth={2} />
+              : <>{theme.iconSrc ? <img className="mimin-launcher-image" src={theme.iconSrc} alt="" />
+                : <MessageCircleMore aria-hidden="true" size={23} strokeWidth={1.9} />}
+                {title && <span className="mimin-launcher-label">{title}</span>}</>}
+          </motion.span>
+        </AnimatePresence>
+      </motion.button>}
     </div>
   )
 }

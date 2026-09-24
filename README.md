@@ -1,6 +1,6 @@
 # Mimin Omnichannel Widget
 
-A Vite 8 + React launcher for embedding Mimin's existing omnichannel web chat on external websites. The launcher uses a shadow root and `mimin-` prefixed CSS classes; the full chat runs in an iframe at `/web-chat/embed/:username`. The launcher uses plain CSS rather than Tailwind, so no host Tailwind configuration is needed. Widget colors, icon, and title come from the saved Website credential (`template_data`) in Mimin, not from the embed code.
+A Vite 8 + React launcher for embedding Mimin's existing omnichannel web chat on external websites. The launcher uses a shadow root and `mimin-` prefixed CSS classes; the full chat runs in an iframe at `/web-chat/embed/:username`. The launcher uses plain CSS rather than Tailwind, so no host Tailwind configuration is needed. Widget colors, icon, and optional title come from the saved Website credential (`template_data`) in Mimin, not from the embed code. The launcher appears only after the embedded chat confirms it is ready.
 
 ## Develop
 
@@ -20,7 +20,9 @@ npm run build
 npm run build:hosted
 ```
 
-`build` creates `dist/omnichannel.js` and `dist/omnichannel.css`. `build:hosted` also copies both files to the sibling Mimin app under `public/omnichannel-widget/v0.1.0/`. To use another destination, set `MIMIN_HOST_PUBLIC_DIR` to the public widget directory. The Mimin app serves those files across origins. The dashboard snippet loads JavaScript from the version-pinned npm CDN and CSS from the Mimin app, so deploy the CSS with the app changes.
+`build` creates `dist/omnichannel.js` and `dist/omnichannel.css`. `build:hosted` also copies both files to the sibling Mimin app under `public/omnichannel-widget/v0.1.1/`. To use another destination, set `MIMIN_HOST_PUBLIC_DIR` to the public widget directory. The Mimin app serves those files across origins.
+
+Version 0.1.1 is an unpublished local test candidate. Run `npm run build:hosted`, then run `next dev` in the Mimin app. The Website → Script tab uses the local 0.1.1 file in development. Production continues to show the published npm 0.1.0 URL until 0.1.1 is tested and published.
 
 ## Embed
 
@@ -74,4 +76,4 @@ The Mimin app allows framing only the dedicated `/web-chat/embed/*` route. A cus
 
 ## Release
 
-Keep the version in `package.json`, the dashboard snippet, the npm CDN URL, and the hosted path aligned. Bump them together for a new widget release. `prepack` builds the JavaScript, CSS, and TypeScript declarations before npm creates the tarball.
+After publishing 0.1.1 to npm, update the dashboard's production CDN version and the published examples above to 0.1.1. Keep the JavaScript and CSS versions aligned. `prepack` builds the JavaScript, CSS, and TypeScript declarations before npm creates the tarball.
