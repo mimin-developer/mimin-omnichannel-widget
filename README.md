@@ -66,7 +66,7 @@ To serve the JavaScript from your own Mimin app instead of the npm CDN, use the 
 ></script>
 ```
 
-The widget loads its stylesheet from the Mimin app origin, so that app must serve `/omnichannel-widget/v0.1.0/omnichannel.css` even when the JavaScript comes from npm or a CDN. If the app is served over HTTPS, the embedding site should also use HTTPS to avoid mixed-content failures.
+The widget loads its stylesheet from the Mimin app origin, so that app must serve `/omnichannel-widget/v0.1.0/omnichannel.css` even when the JavaScript comes from npm or a CDN. If the embedding site uses HTTPS, the Mimin app URL must also use HTTPS; browsers block HTTP widget resources as mixed content.
 
 The script stores a random visitor ID under the embedding site's own `localStorage` origin, scoped by Mimin host, username, and Website ID. Each domain therefore has a separate conversation identity. The iframe does not require third-party cookies. Greeting completion and language preference are persisted on the embedding domain by verified `postMessage` events from the iframe.
 
