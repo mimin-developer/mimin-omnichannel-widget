@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Omnichannel widget playground</title>
+  </head>
+  <body>
+    <main style="font: 16px system-ui; padding: 40px; max-width: 720px">
+      <h1>Omnichannel widget playground</h1>
+      <p>This page deliberately uses its own styles. The launcher lives in a shadow root.</p>
+      <label>Username <input id="username" value="demo" /></label><br /><br />
+      <label>Website ID <input id="websiteId" value="demo" /></label><br /><br />
+      <label>App URL <input id="appUrl" value="http://localhost:3000" /></label><br /><br />
+      <button id="mount">Mount widget</button>
+      <button id="unmount">Destroy widget</button>
+    </main>
+    <script type="module" src="/src/demo.ts"></script>
+  </body>
+</html>
