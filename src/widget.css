@@ -9,7 +9,7 @@
 .mimin-launcher-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; line-height: 1.2; }
 .mimin-launcher:focus-visible, .mimin-close:focus-visible { outline: 3px solid #111827; outline-offset: 3px; }
 .mimin-launcher-image { flex: none; width: 26px; height: 26px; object-fit: contain; }
-.mimin-panel { pointer-events: auto; visibility: hidden; width: min(390px, calc(100vw - 24px)); height: min(660px, calc(100dvh - 92px)); min-height: 300px; display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 18px; border: 1px solid rgba(0, 0, 0, .09); box-shadow: 0 20px 65px rgba(0, 0, 0, .26); transform-origin: bottom right; }
+.mimin-panel { pointer-events: auto; visibility: hidden; width: min(390px, calc(100vw - 24px)); height: min(660px, calc(100vh - 92px)); height: min(660px, calc(100dvh - 92px)); min-height: 300px; display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 18px; border: 1px solid rgba(0, 0, 0, .09); box-shadow: 0 20px 65px rgba(0, 0, 0, .26); transform-origin: bottom right; }
 .mimin-widget--left .mimin-panel { transform-origin: bottom left; }
 .mimin-panel-bar { height: 39px; min-height: 39px; padding: 0 9px 0 14px; display: flex; align-items: center; gap: 8px; background: #fff; border-bottom: 1px solid #e8e8e8; color: #333; }
 .mimin-panel-title { flex: 1; min-width: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-size: 12px; font-weight: 600; }
