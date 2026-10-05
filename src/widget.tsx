@@ -170,10 +170,7 @@ function Widget({ options, appOrigin, visitorId, greetingSeen, storagePrefix, ho
           : { opacity: 0, y: 14, scale: 0.96, transitionEnd: { visibility: 'hidden' } }}
         transition={reduceMotion ? { duration: 0 } : { duration: open && ready ? 0.28 : 0.18, ease: [0.16, 1, 0.3, 1] }}
         style={{ pointerEvents: open && ready ? 'auto' : 'none' }}>
-        <div className="mimin-panel-bar">
-          <span className="mimin-panel-title">{title}</span>
-          <button type="button" className="mimin-close" aria-label={labels[locale].close} onClick={toggle}><X aria-hidden="true" size={20} strokeWidth={2} /></button>
-        </div>
+        <button type="button" className="mimin-close" aria-label={labels[locale].close} onClick={toggle}><X aria-hidden="true" size={16} strokeWidth={2} /></button>
         <iframe className="mimin-chat-frame" ref={iframeRef} src={frameUrl} title={title || labels[locale].open} allow="clipboard-write" />
       </motion.section>
       {ready && <motion.button type="button" className={`mimin-launcher${title && !open ? ' mimin-launcher--titled' : ''}`} style={{ backgroundColor: theme.buttonColor, color: theme.buttonTextColor }}
